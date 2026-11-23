@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "ServerEvent": {
+      "title": "ServerEvent",
+      "description": "A global server-wide fishing event created by the administrator and visible to all players and testers.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Display title of the server-wide event.",
+          "minLength": 3,
+          "maxLength": 60
+        },
+        "description": {
+          "type": "string",
+          "description": "Short explanation of the event and its rewards.",
+          "minLength": 0,
+          "maxLength": 240
+        },
+        "bonusType": {
+          "type": "string",
+          "description": "Gameplay modifier granted while the event is active.",
+          "enum": ["xp_boost", "money_boost", "activity_boost", "rare_fish", "luck_boost", "all_boost"]
+        },
+        "locationId": {
+          "type": "string",
+          "description": "Target location id or 'all' for every water body.",
+          "minLength": 2,
+          "maxLength": 32,
+          "pattern": "^[a-z0-9_\\-]+$"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether the event is currently enabled."
+        },
+        "startsAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 start timestamp.",
+          "maxLength": 40
+        },
+        "endsAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 end timestamp.",
+          "maxLength": 40
+        },
+        "createdByUid": {
+          "type": "string",
+          "description": "UID of the admin who created the event.",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdByName": {
+          "type": "string",
+          "description": "Optional display label of the creator.",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "bonusType",
+        "locationId",
+        "active",
+        "startsAt",
+        "endsAt",
+        "createdByUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Privileged admin record keyed by user UID.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["admin"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/server_events/{eventId}": {
+      "schema": { "$ref": "#/entities/ServerEvent" },
+      "description": "Server-wide events publicly readable when active and writable only by verified admins."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Admin role documents readable only by the owner/admin and locked against self-escalation."
+    }
+  }
+}

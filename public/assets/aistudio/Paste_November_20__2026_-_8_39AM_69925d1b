@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Fishing Simulator</title>
+<style>
+:root {
+  --bg: #101a1c;
+  --panel: rgba(13, 27, 29, .94);
+  --panel2: #1b3030;
+  --green: #a4c69a;
+  --gold: #e5bd70;
+  --muted: #a8b8b0;
+  --line: rgba(210,235,220,.14);
+  --danger: #e17e70;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  color:#edf3ed;
+  background:var(--bg);
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  min-height:100vh;
+}
+button,select,input { font:inherit; }
+button {
+  border:1px solid var(--line);
+  background:#29413b;
+  color:#f4f7f0;
+  padding:10px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:.2s;
+}
+button:hover { background:#3c5b4d; border-color:#9cbd9a; }
+button:disabled { opacity:.4; cursor:not-allowed; }
+button.primary { background:#678b64; color:#07120c; font-weight:700; }
+button.gold { background:#b38b4f; color:#1b160c; font-weight:700; }
+button.danger { background:#733e38; }
+button.small { padding:6px 9px; font-size:12px; }
+select,input {
+  background:#142522;
+  color:#fff;
+  border:1px solid var(--line);
+  padding:9px;
+  border-radius:7px;
+  width:100%;
+}
+header {
+  height:68px;
+  padding:0 22px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:#0b1415;
+  border-bottom:1px solid var(--line);
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+.brand { font-weight:800; letter-spacing:1.5px; }
+.brand span { color:var(--gold); }
+.header-stats { display:flex; gap:18px; color:var(--muted); font-size:13px; }
+.header-stats strong { color:#fff; }
+.app {
+  display:grid;
+  grid-template-columns:220px minmax(0,1fr);
+  min-height:calc(100vh - 68px);
+}
+nav {
+  padding:18px 12px;
+  background:#101c1c;
+  border-right:1px solid var(--line);
+}
+.nav-label {
+  color:#71877e;
+  font-size:10px;
+  letter-spacing:2px;
+  margin:15px 10px 8px;
+}
+nav button {
+  width:100%;
+  text-align:left;
+  margin:3px 0;
+  background:transparent;
+  border-color:transparent;
+}
+nav button.active { background:#294039; border-color:#486858; }
+main { min-width:0; padding:22px; }
+.page { display:none; }
+.page.active { display:block; }
+h1,h2,h3 { margin-top:0; }
+h1 { font-size:25px; letter-spacing:.4px; }
+h2 { font-size:19px; }
+h3 { font-size:15px; }
+.muted { color:var(--muted); }
+.gold-text { color:var(--gold); }
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+}
+.card {
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px;
+  min-width:0;
+}
+.card h3 { margin-bottom:8px; }
+.stat {
+  font-size:25px;
+  font-weight:750;
+  margin:7px 0;
+}
+.tag {
+  display:inline-block;
+  font-size:11px;
+  padding:4px 8px;
+  border-radius:20px;
+  background:#2c453b;
+  color:#c7dfc0;
+}
+hr { border:0; border-top:1px solid var(--line); margin:16px 0; }
+.row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.between { justify-content:space-between; }
+.progress {
+  height:8px;
+  background:#0a1412;
+  border-radius:10px;
+  overflow:hidden;
+}
+.progress > div {
+  height:100%;
+  background:linear-gradient(90deg,#759b6e,#c1d49a);
+  width:0%;
+  transition:width .3s;
+}
+#world {
+  height:440px;
+  border-radius:14px;
+  overflow:hidden;
+  position:relative;
+  border:1px solid #61766c;
+  background:
+    linear-gradient(180deg,rgba(17,32,39,.05),rgba(4,16,17,.25)),
+    linear-gradient(180deg,#9aaea5 0%,#647e76 25%,#315c59 26%,#1c4847 60%,#173b36 100%);
+}
+#world::before {
+  content:"";
+  position:absolute;
+  left:-5%; right:-5%; top:18%;
+  height:24%;
+  background:
+    radial-gradient(ellipse at 20% 70%,#304b37 0 16%,transparent 17%),
+    radial-gradient(ellipse at 45% 80%,#40583b 0 19%,transparent 20%),
+    radial-gradient(ellipse at 78% 60%,#2d4935 0 20%,transparent 21%);
+  filter:blur(2px);
+}
+#world::after {
+  content:"";
+  position:absolute;
+  left:0; right:0; top:26%;
+  height:4px;
+  background:rgba(215,230,205,.25);
+  box-shadow:0 20px 30px rgba(210,240,230,.1);
+}
+.sun {
+  position:absolute;
+  width:65px; height:65px;
+  border-radius:50%;
+  top:8%; right:18%;
+  background:#e8d7a4;
+  box-shadow:0 0 55px 18px rgba(238,220,158,.2);
+}
+.water {
+  position:absolute;
+  left:0; right:0; top:28%; bottom:0;
+  background:
+    repeating-linear-gradient(174deg,transparent 0 18px,rgba(195,221,208,.08) 19px 20px,transparent 21px 38px),
+    linear-gradient(180deg,rgba(44,99,94,.8),rgba(8,43,42,.95));
+  animation:waterMove 8s linear infinite;
+}
+@keyframes waterMove {
+  from { background-position:0 0,0 0; }
+  to { background-position:120px 0,0 0; }
+}
+.reeds {
+  position:absolute; bottom:0; left:4%;
+  color:#b1b887; font-size:54px; opacity:.65;
+}
+#float {
+  display:none;
+  position:absolute;
+  width:12px; height:22px;
+  border-radius:50% 50% 40% 40%;
+  background:#e5bd70;
+  border:2px solid #f6e4ba;
+  left:58%; top:56%;
+  z-index:3;
+  box-shadow:0 0 10px rgba(255,255,255,.3);
+}
+#castLine {
+  display:none;
+  position:absolute;
+  height:1px;
+  width:38%;
+  left:21%; top:54%;
+  transform:rotate(7deg);
+  transform-origin:left;
+  background:rgba(235,241,221,.65);
+  z-index:2;
+}
+#world.weather-rain .water {
+  background-image:repeating-linear-gradient(100deg,transparent 0 7px,rgba(220,240,240,.2) 8px 9px,transparent 10px 17px);
+}
+#world.night { filter:brightness(.45) saturate(.8); }
+#world.fog::before { filter:blur(12px); opacity:.6; }
+#biteAlert {
+  display:none;
+  position:absolute;
+  z-index:5;
+  top:16px; left:50%;
+  transform:translateX(-50%);
+  padding:12px 20px;
+  border-radius:9px;
+  color:#1b160c;
+  background:#f1c56e;
+  font-weight:800;
+  animation:pulse .7s infinite alternate;
+}
+@keyframes pulse { to { transform:translateX(-50%) scale(1.06); } }
+.hud {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-top:12px;
+}
+.hud .card { padding:11px; }
+.hud .stat { font-size:17px; }
+.control-panel { margin-top:14px; }
+.control-panel button { margin:3px; }
+.meter {
+  height:12px;
+  background:#0b1513;
+  border-radius:20px;
+  overflow:hidden;
+  margin:6px 0 12px;
+}
+.meter div { height:100%; width:0; transition:width .15s; }
+#tensionBar { background:#d59b58; }
+#staminaBar { background:#79ad75; }
+#catchList { display:grid; gap:8px; }
+.catch-item {
+  display:flex; justify-content:space-between;
+  padding:10px; border-radius:8px;
+  background:#192b28; font-size:13px;
+}
+.shop-item,.mission-item {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:12px 0; border-bottom:1px solid var(--line);
+}
+.shop-item:last-child,.mission-item:last-child { border:0; }
+.toast {
+  position:fixed; bottom:22px; right:22px;
+  background:#e2c17d; color:#17150e;
+  padding:13px 18px; border-radius:9px;
+  font-weight:700; z-index:30;
+  opacity:0; transform:translateY(10px);
+  pointer-events:none; transition:.25s;
+}
+.toast.show { opacity:1; transform:translateY(0); }
+.modal-backdrop {
+  display:none; position:fixed; inset:0; z-index:20;
+  background:rgba(0,0,0,.7);
+  align-items:center; justify-content:center; padding:18px;
+}
+.modal-backdrop.show { display:flex; }
+.modal {
+  width:min(520px,100%);
+  background:#142321; border:1px solid var(--line);
+  border-radius:14px; padding:22px;
+}
+.empty { color:#82958c; padding:18px 0; }
+footer { color:#73877e; font-size:11px; margin-top:25px; }
+@media(max-width:760px) {
+  header { padding:0 12px; }
+  .header-stats { gap:8px; font-size:11px; }
+  .app { grid-template-columns:1fr; }
+  nav {
+    display:flex; overflow-x:auto; gap:5px;
+    border-right:0; border-bottom:1px solid var(--line);
+    padding:8px;
+  }
+  nav .nav-label { display:none; }
+  nav button { width:auto; white-space:nowrap; font-size:12px; }
+  main { padding:14px; }
+  #world { height:330px; }
+  .hud { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">ULTIMATE <span>FISHING</span> SIMULATOR</div>
+  <div class="header-stats">
+    <span>LEVEL <strong id="headerLevel">1</strong></span>
+    <span>XP <strong id="headerXP">0</strong></span>
+    <span>GELD <strong id="headerMoney">250 €</strong></span>
+  </div>
+</header>
+
+<div class="app">
+<nav>
+  <div class="nav-label">SPIEL</div>
+  <button class="active" data-page="fishing">🎣 Angeln</button>
+  <button data-page="locations">🌲 Angelgebiete</button>
+  <button data-page="equipment">🧰 Ausrüstung</button>
+  <button data-page="shop">🛒 Shop</button>
+  <div class="nav-label">FORTSCHRITT</div>
+  <button data-page="missions">📋 Missionen</button>
+  <button data-page="logbook">📖 Fangbuch</button>
+  <button data-page="records">🏆 Rekorde</button>
+  <button data-page="encyclopedia">🐟 Fischlexikon</button>
+  <div class="nav-label">WEITERE</div>
+  <button data-page="tournaments">🥇 Turniere</button>
+  <button data-page="settings">⚙️ Einstellungen</button>
+</nav>
+
+<main>
+<section class="page active" id="page-fishing">
+  <div class="row between">
+    <div>
+      <h1 id="locationTitle">Waldsee</h1>
+      <p class="muted" id="locationDescription">Ein stiller See, umgeben von dichtem Wald.</p>
+    </div>
+    <span class="tag" id="eventTag">Ruhiger Angeltag</span>
+  </div>
+
+  <div id="world">
+    <div class="sun"></div>
+    <div class="water"></div>
+    <div class="reeds">♧ ♧ ♧</div>
+    <div id="castLine"></div>
+    <div id="float"></div>
+    <div id="biteAlert">BISS! JETZT ANSCHLAGEN!</div>
+  </div>
+
+  <div class="hud">
+    <div class="card"><div class="muted">Uhrzeit</div><div class="stat" id="clock">07:30</div></div>
+    <div class="card"><div class="muted">Wetter</div><div class="stat" id="weather">☀️ Sonnig</div></div>
+    <div class="card"><div class="muted">Temperatur</div><div class="stat" id="temperature">18 °C</div></div>
+    <div class="card"><div class="muted">Wind</div><div class="stat" id="wind">5 km/h</div></div>
+  </div>
+
+  <div class="grid control-panel">
+    <div class="card">
+      <h3>Angel vorbereiten</h3>
+      <label class="muted">Angelrute</label>
+      <select id="rodSelect"></select>
+      <label class="muted">Köder</label>
+      <select id="baitSelect"></select>
+      <label class="muted">Angeltiefe</label>
+      <select id="depthSelect">
+        <option value="shallow">Flach (0,5–1 m)</option>
+        <option value="mid" selected>Mittel (1–3 m)</option>
+        <option value="deep">Tief (3–7 m)</option>
+      </select>
+      <label class="muted">Wurfweite</label>
+      <input id="distanceInput" type="range" min="10" max="80" value="45">
+      <div class="row between"><small class="muted">10 m</small><strong id="distanceValue">45 m</strong><small class="muted">80 m</small></div>
+      <button class="primary" id="castButton">Auswerfen</button>
+      <button id="reelButton" disabled>Einholen</button>
+    </div>
+
+    <div class="card">
+      <h3>Drill-Kontrolle</h3>
+      <div class="muted">Schnurspannung</div>
+      <div class="meter"><div id="tensionBar"></div></div>
+      <div class="muted">Fisch-Ausdauer</div>
+      <div class="meter"><div id="staminaBar"></div></div>
+      <div class="row between">
+        <span class="muted">Bremskraft</span>
+        <strong id="brakeValue">45 %</strong>
+      </div>
+      <input id="brakeInput" type="range" min="10" max="90" value="45">
+      <div class="row">
+        <button id="reelInButton" disabled>Kurbeln</button>
+        <button id="releaseButton" disabled>Fisch landen</button>
+      </div>
+      <p class="muted" id="fishingStatus">Wähle deine Ausrüstung und wirf aus.</p>
+    </div>
+
+    <div class="card">
+      <h3>Angelplatz-Analyse</h3>
+      <p class="muted" id="analysisText">Wähle einen Angelplatz, um die Bedingungen zu analysieren.</p>
+      <div class="row between"><span class="muted">Fischaktivität</span><strong id="activityText">Mittel</strong></div>
+      <div class="progress"><div id="activityBar" style="width:55%"></div></div>
+      <button id="scannerButton">Echolot scannen</button>
+      <button id="underwaterButton">Unterwasserblick</button>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="page-locations">
+  <h1>Angelgebiete</h1>
+  <p class="muted">Erkunde unterschiedliche Gewässer und ihre Fischbestände.</p>
+  <div class="grid" id="locationCards"></div>
+</section>
+
+<section class="page" id="page-equipment">
+  <h1>Meine Ausrüstung</h1>
+  <div class="grid">
+    <div class="card"><h3>Aktuelle Angel</h3><div id="equippedRod"></div></div>
+    <div class="card"><h3>Aktueller Köder</h3><div id="equippedBait"></div></div>
+    <div class="card"><h3>Schnur</h3><div id="lineInfo">Monofile Schnur · 6 kg Tragkraft</div></div>
+    <div class="card"><h3>Zubehör</h3><div id="accessoryInfo">Einfacher Kescher</div></div>
+  </div>
+</section>
+
+<section class="page" id="page-shop">
+  <h1>Ausrüstungsshop</h1>
+  <p class="muted">Verbessere deine Ausrüstung mit verdientem Spielgeld.</p>
+  <div class="card" id="shopList"></div>
+</section>
+
+<section class="page" id="page-missions">
+  <h1>Missionen</h1>
+  <div class="grid">
+    <div class="card"><h2>Tägliche Aufgaben</h2><div id="dailyMissions"></div></div>
+    <div class="card"><h2>Wochenaufgaben</h2><div id="weeklyMissions"></div></div>
+  </div>
+</section>
+
+<section class="page" id="page-logbook">
+  <h1>Persönliches Fangbuch</h1>
+  <div class="grid">
+    <div class="card"><h3>Gesamtfänge</h3><div class="stat" id="totalCatches">0</div></div>
+    <div class="card"><h3>Gesamtgewicht</h3><div class="stat" id="totalWeight">0 kg</div></div>
+    <div class="card"><h3>Arten entdeckt</h3><div class="stat" id="speciesCount">0</div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h2>Letzte Fänge</h2>
+    <div id="catchList"><div class="empty">Noch keine Fische gefangen.</div></div>
+  </div>
+</section>
+
+<section class="page" id="page-records">
+  <h1>Rekorde und Trophäen</h1>
+  <div class="grid" id="recordCards"></div>
+</section>
+
+<section class="page" id="page-encyclopedia">
+  <h1>Fischlexikon</h1>
+  <p class="muted">Entdecke Lebensräume, Nahrung und bevorzugte Köder.</p>
+  <div class="grid" id="fishCards"></div>
+</section>
+
+<section class="page" id="page-tournaments">
+  <h1>Turniere</h1>
+  <div class="grid" id="tournamentCards"></div>
+</section>
+
+<section class="page" id="page-settings">
+  <h1>Einstellungen und Spielstand</h1>
+  <div class="card">
+    <h3>Spielverwaltung</h3>
+    <p class="muted">Dein Fortschritt wird automatisch im Browser gespeichert.</p>
+    <button id="saveButton" class="primary">Jetzt speichern</button>
+    <button id="resetButton" class="danger">Spielstand zurücksetzen</button>
+    <hr>
+    <label for="soundVolume">Soundlautstärke</label>
+    <input id="soundVolume" type="range" min="0" max="100" value="35">
+    <p class="muted">Soundeffekte werden nach deiner ersten Interaktion aktiviert.</p>
+  </div>
+</section>
+
+<footer>ULTIMATE FISHING SIMULATOR · REAL LIFE FISHING EXPERIENCE</footer>
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <div class="row between">
+      <h2 id="modalTitle">Information</h2>
+      <button id="closeModal">✕</button>
+    </div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+<script>
+"use strict";
+
+/* =========================================================
+   ULTIMATE FISHING SIMULATOR
+   Spielzustand und Datengrundlagen
+========================================================= */
+
+const $ = id => document.getElementById(id);
+const STORAGE_KEY = "ultimateFishingSimulator_v1";
+
+const fishData = [
+  {name:"Karpfen",type:"Friedfisch",weight:[1,18],length:[35,95],rarity:1,baits:["Mais","Boilie","Wurm","Pellets"],depth:["mid","deep"],times:["Morgen","Abend"],habitat:"Seen und langsam fließende Gewässer",food:"Würmer, Schnecken, Pflanzen und Larven"},
+  {name:"Spiegelkarpfen",type:"Friedfisch",weight:[2,24],length:[40,105],rarity:2,baits:["Boilie","Mais","Pellets"],depth:["mid","deep"],times:["Morgen","Abend"],habitat:"Warme, pflanzenreiche Seen",food:"Kleintiere und Pflanzen"},
+  {name:"Schuppenkarpfen",type:"Friedfisch",weight:[1,20],length:[35,100],rarity:2,baits:["Mais","Boilie","Wurm"],depth:["mid","deep"],times:["Morgen","Abend"],habitat:"Seen und Teiche",food:"Bodentiere und Pflanzen"},
+  {name:"Graskarpfen",type:"Friedfisch",weight:[2,25],length:[50,115],rarity:3,baits:["Mais","Brot","Pellets"],depth:["shallow","mid"],times:["Tag","Abend"],habitat:"Warme, pflanzenreiche Gewässer",food:"Wasserpflanzen"},
+  {name:"Karausche",type:"Friedfisch",weight:[.2,2.5],length:[15,40],rarity:1,baits:["Wurm","Mais","Maden"],depth:["shallow","mid"],times:["Morgen","Tag"],habitat:"Kleine Seen und Teiche",food:"Kleintiere und Pflanzen"},
+  {name:"Schleie",type:"Friedfisch",weight:[.3,4],length:[20,55],rarity:2,baits:["Wurm","Mais","Maden"],depth:["shallow","mid"],times:["Morgen","Abend"],habitat:"Pflanzenreiche Uferzonen",food:"Schnecken und Larven"},
+  {name:"Brasse",type:"Friedfisch",weight:[.5,7],length:[25,65],rarity:1,baits:["Maden","Wurm","Mais"],depth:["mid","deep"],times:["Morgen","Nacht"],habitat:"Ruhige Seen und Flüsse",food:"Bodentiere"},
+  {name:"Rotauge",type:"Friedfisch",weight:[.1,1.2],length:[10,30],rarity:1,baits:["Maden","Wurm","Brot"],depth:["shallow","mid"],times:["Morgen","Tag"],habitat:"Fast alle Süßgewässer",food:"Insekten und Kleintiere"},
+  {name:"Rotfeder",type:"Friedfisch",weight:[.1,1.5],length:[12,35],rarity:1,baits:["Brot","Maden","Mais"],depth:["shallow"],times:["Tag"],habitat:"Pflanzenreiche Uferzonen",food:"Insekten und Pflanzen"},
+  {name:"Güster",type:"Friedfisch",weight:[.1,1.5],length:[12,30],rarity:1,baits:["Maden","Wurm"],depth:["mid"],times:["Morgen","Tag"],habitat:"Seen und langsam fließende Flüsse",food:"Kleine Bodentiere"},
+  {name:"Hecht",type:"Raubfisch",weight:[1,15],length:[45,120],rarity:2,baits:["Gummifisch","Wobbler","Spinner","Blinker"],depth:["shallow","mid"],times:["Morgen","Abend"],habitat:"Pflanzenreiche Seen und Flüsse",food:"Fische und kleine Wasserbewohner"},
+  {name:"Zander",type:"Raubfisch",weight:[1,10],length:[40,100],rarity:2,baits:["Gummifisch","Wobbler","Wurm"],depth:["mid","deep"],times:["Abend","Nacht"],habitat:"Trübe Seen und Flüsse",food:"Kleine Fische"},
+  {name:"Flussbarsch",type:"Raubfisch",weight:[.1,3],length:[10,50],rarity:1,baits:["Wurm","Spinner","Gummifisch"],depth:["shallow","mid"],times:["Tag","Abend"],habitat:"Seen und Flüsse",food:"Insekten und kleine Fische"},
+  {name:"Wels",type:"Raubfisch",weight:[3,45],length:[60,190],rarity:4,baits:["Wurm","Boilie","Pellets"],depth:["deep"],times:["Nacht"],habitat:"Tiefe Flussbereiche und Seen",food:"Fische und größere Bodentiere"},
+  {name:"Rapfen",type:"Raubfisch",weight:[1,8],length:[40,90],rarity:3,baits:["Spinner","Blinker","Wobbler"],depth:["shallow","mid"],times:["Tag"],habitat:"Strömungsreiche Flüsse",food:"Kleine Fische"},
+  {name:"Bachforelle",type:"Raubfisch",weight:[.2,5],length:[18,65],rarity:2,baits:["Wurm","Fliege","Spinner"],depth:["shallow","mid"],times:["Morgen","Tag"],habitat:"Klare, sauerstoffreiche Bäche",food:"Insekten und kleine Fische"},
+  {name:"Regenbogenforelle",type:"Raubfisch",weight:[.3,6],length:[20,70],rarity:2,baits:["Wurm","Fliege","Spinner"],depth:["shallow","mid"],times:["Morgen","Tag"],habitat:"Klare Seen und Flüsse",food:"Insekten und Kleinfische"},
+  {name:"Seeforelle",type:"Raubfisch",weight:[1,12],length:[40,100],rarity:4,baits:["Blinker","Wobbler","Gummifisch"],depth:["deep"],times:["Morgen","Abend"],habitat:"Tiefe, klare Bergseen",food:"Kleine Fische"},
+  {name:"Lachs",type:"Raubfisch",weight:[2,15],length:[50,110],rarity:5,baits:["Spinner","Fliege","Wobbler"],depth:["mid"],times:["Morgen","Tag"],habitat:"Kühle Flüsse",food:"Fische und Insekten"},
+  {name:"Aal",type:"Weitere",weight:[.2,4],length:[30,100],rarity:3,baits:["Wurm","Maden"],depth:["deep"],times:["Nacht"],habitat:"Seen und Flüsse",food:"Kleine Bodentiere"},
+  {name:"Döbel",type:"Weitere",weight:[.3,4],length:[20,60],rarity:2,baits:["Brot","Wurm","Maden"],depth:["shallow","mid"],times:["Tag"],habitat:"Flüsse und Bäche",food:"Insekten und Kleinfische"},
+  {name:"Barbe",type:"Weitere",weight:[.5,8],length:[25,80],rarity:3,baits:["Wurm","Maden","Käse"],depth:["mid","deep"],times:["Morgen","Abend"],habitat:"Strömungsreiche Flüsse",food:"Bodentiere"},
+  {name:"Äsche",type:"Weitere",weight:[.3,2],length:[20,50],rarity:4,baits:["Fliege","Maden"],depth:["shallow","mid"],times:["Morgen","Tag"],habitat:"Klare Flüsse",food:"Insektenlarven"},
+  {name:"Renke",type:"Weitere",weight:[.2,3],length:[20,55],rarity:3,baits:["Maden","Wurm"],depth:["deep"],times:["Morgen","Tag"],habitat:"Tiefe, klare Seen",food:"Plankton und Kleintiere"},
+  {name:"Stör",type:"Weitere",weight:[3,30],length:[70,180],rarity:5,baits:["Wurm","Boilie","Pellets"],depth:["deep"],times:["Nacht","Abend"],habitat:"Tiefe Gewässer",food:"Bodentiere"},
+  {name:"Huchen",type:"Raubfisch",weight:[2,20],length:[50,130],rarity:5,baits:["Wobbler","Blinker","Gummifisch"],depth:["mid","deep"],times:["Morgen","Abend"],habitat:"Große, kühle Flüsse",food:"Fische"}
+];
+
+const locations = [
+  {id:"waldsee",name:"Waldsee",level:1,description:"Ein ruhiger See mitten im Wald.",depth:3.5,bottom:"Schlamm und Kies",plants:"Schilf und Seerosen",fish:["Karpfen","Schleie","Rotauge","Hecht","Flussbarsch","Rotfeder","Brasse"],kind:"See"},
+  {id:"bergsee",name:"Großer Bergsee",level:15,description:"Klares, tiefes Wasser in alpiner Landschaft.",depth:18,bottom:"Fels und Kies",plants:"Wenig Pflanzenbewuchs",fish:["Bachforelle","Regenbogenforelle","Seeforelle","Renke","Flussbarsch"],kind:"Bergsee"},
+  {id:"fluss",name:"Großer Fluss",level:10,description:"Ein breiter Fluss mit wechselnder Strömung.",depth:8,bottom:"Sand, Kies und Steine",plants:"Uferpflanzen",fish:["Zander","Barbe","Döbel","Wels","Hecht","Rapfen","Aal"],kind:"Fluss"},
+  {id:"karpfensee",name:"Karpfensee",level:5,description:"Ein ruhiger See mit guten Bedingungen für kapitale Karpfen.",depth:5,bottom:"Weicher Schlamm",plants:"Seerosen und Krautfelder",fish:["Spiegelkarpfen","Schuppenkarpfen","Graskarpfen","Karausche","Karpfen"],kind:"See"},
+  {id:"wildfluss",name:"Wildfluss",level:20,description:"Ein naturbelassener Fluss mit klarem Wasser und starker Strömung.",depth:4,bottom:"Fels und grober Kies",plants:"Wenig Pflanzenbewuchs",fish:["Bachforelle","Äsche","Huchen","Döbel","Barbe"],kind:"Fluss"}
+];
+
+const rods = [
+  {name:"Einsteiger-Angelrute",price:0,power:5,level:1},
+  {name:"Feederrute",price:180,power:7,level:2},
+  {name:"Karpfenrute",price:450,power:12,level:3},
+  {name:"Spinnrute",price:600,power:9,level:8},
+  {name:"Fliegenrute",price:750,power:8,level:10},
+  {name:"Welsrute",price:1200,power:22,level:15},
+  {name:"Profi-Angelrute",price:2200,power:30,level:20}
+];
+
+const baits = [
+  {name:"Wurm",price:0,stock:20},
+  {name:"Mais",price:2,stock:20},
+  {name:"Maden",price:2,stock:20},
+  {name:"Boilie",price:5,stock:15},
+  {name:"Pellets",price:4,stock:15},
+  {name:"Brot",price:2,stock:15},
+  {name:"Gummifisch",price:8,stock:12},
+  {name:"Spinner",price:10,stock:12},
+  {name:"Wobbler",price:14,stock:10},
+  {name:"Blinker",price:10,stock:10},
+  {name:"Fliege",price:8,stock:12}
+];
+
+const shopItems = [
+  {name:"Feederrute",price:180,kind:"rod"},
+  {name:"Karpfenrute",price:450,kind:"rod"},
+  {name:"Spinnrute",price:600,kind:"rod"},
+  {name:"Fliegenrute",price:750,kind:"rod"},
+  {name:"Welsrute",price:1200,kind:"rod"},
+  {name:"Profi-Angelrute",price:2200,kind:"rod"},
+  {name:"Kescher-Upgrade",price:250,kind:"gear"},
+  {name:"Abhakmatte",price:120,kind:"gear"},
+  {name:"Echolot",price:500,kind:"gear"},
+  {name:"Ruderboot",price:900,kind:"boat"}
+];
+
+function newGame() {
+  return {
+    level:1, xp:0, money:250,
+    catches:[], records:{heaviest:null,longest:null,carp:null,pike:null},
+    ownedRods:["Einsteiger-Angelrute"],
+    currentRod:"Einsteiger-Angelrute",
+    baits:{"Wurm":20,"Mais":10,"Maden":10},
+    currentBait:"Wurm",
+    gear:["Einfacher Kescher"],
+    boats:[],
+    location:"waldsee",
+    missions:[],
+    weekly:[],
+    totalWeight:0,
+    totalCaught:0,
+    sound:35,
+    released:0,
+    unlocked:["waldsee"],
+    lastDaily:new Date().toDateString(),
+    lastWeekly:getWeekKey()
+  };
+}
+
+function loadGame() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!saved) return newGame();
+    return {...newGame(),...saved};
+  } catch(error) {
+    console.warn("Spielstand konnte nicht geladen werden:",error);
+    return newGame();
+  }
+}
+
+let state = loadGame();
+let fishing = {
+  phase:"idle",
+  timer:null,
+  fish:null,
+  tension:0,
+  stamina:0,
+  distance:0,
+  brake:45,
+  biteTimeout:null,
+  lastTick:0
+};
+
+let gameTime = 7.5;
+let weather = "Sonnig";
+let temperature = 18;
+let wind = 5;
+let weatherTimer = 0;
+let soundContext = null;
+
+function saveGame() {
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+}
+
+function getWeekKey() {
+  const d = new Date();
+  const first = new Date(d.getFullYear(),0,1);
+  return `${d.getFullYear()}-${Math.ceil((((d-first)/86400000)+first.getDay()+1)/7)}`;
+}
+
+function currentLocation() {
+  return locations.find(x=>x.id===state.location) || locations[0];
+}
+
+function currentRod() {
+  return rods.find(x=>x.name===state.currentRod) || rods[0];
+}
+
+function currentBait() {
+  return baits.find(x=>x.name===state.currentBait) || baits[0];
+}
+
+function notify(message) {
+  const toast=$("toast");
+  toast.textContent=message;
+  toast.classList.add("show");
+  clearTimeout(notify.timer);
+  notify.timer=setTimeout(()=>toast.classList.remove("show"),2600);
+}
+
+function showModal(title,html) {
+  $("modalTitle").textContent=title;
+  $("modalContent").innerHTML=html;
+  $("modalBackdrop").classList.add("show");
+}
+
+function closeModal() {
+  $("modalBackdrop").classList.remove("show");
+}
+
+function addXP(amount) {
+  state.xp+=amount;
+  let needed=state.level*120;
+  while(state.xp>=needed) {
+    state.xp-=needed;
+    state.level++;
+    needed=state.level*120;
+    notify(`Levelaufstieg! Du bist jetzt Level ${state.level}.`);
+    if(state.level>=5 && !state.unlocked.includes("karpfensee")) {
+      state.unlocked.push("karpfensee");
+    }
+  }
+  saveGame();
+  updateHeader();
+}
+
+function updateHeader() {
+  $("headerLevel").textContent=state.level;
+  $("headerXP").textContent=state.xp;
+  $("headerMoney").textContent=state.money+" €";
+}
+
+function getTimeLabel() {
+  const h=Math.floor(gameTime)%24;
+  const m=Math.floor((gameTime%1)*60/5)*5;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+function getDayPhase() {
+  const h=gameTime%24;
+  if(h>=5&&h<8) return "Morgen";
+  if(h>=8&&h<17) return "Tag";
+  if(h>=17&&h<21) return "Abend";
+  return "Nacht";
+}
+
+function activityLevel() {
+  let value=48;
+  const phase=getDayPhase();
+  if(phase==="Morgen"||phase==="Abend") value+=18;
+  if(phase==="Nacht") value-=5;
+  if(weather==="Leichter Regen") value+=10;
+  if(weather==="Starker Regen") value-=8;
+  if(weather==="Nebel") value+=5;
+  return Math.max(10,Math.min(95,value+Math.random()*8));
+}
+
+function updateWorld() {
+  const phase=getDayPhase();
+  $("clock").textContent=getTimeLabel();
+  $("weather").textContent=({
+    "Sonnig":"☀️ Sonnig",
+    "Bewölkt":"☁️ Bewölkt",
+    "Leichter Regen":"🌦️ Regen",
+    "Starker Regen":"🌧️ Starkregen",
+    "Nebel":"🌫️ Nebel",
+    "Windig":"💨 Windig"
+  })[weather]||weather;
+  $("temperature").textContent=temperature+" °C";
+  $("wind").textContent=wind+" km/h";
+
+  $("world").classList.toggle("night",phase==="Nacht");
+  $("world").classList.toggle("fog",weather==="Nebel");
+  $("world").classList.toggle("weather-rain",weather.includes("Regen"));
+
+  const active=activityLevel();
+  $("activityText").textContent=active>70?"Hoch":active>42?"Mittel":"Niedrig";
+  $("activityBar").style.width=active+"%";
+
+  const loc=currentLocation();
+  $("analysisText").textContent=
+    `Tiefe: ${loc.depth} m · Boden: ${loc.bottom} · Pflanzen: ${loc.plants} · Gewässer: ${loc.kind}.`;
+}
+
+function changeWeather() {
+  const options=["Sonnig","Bewölkt","Leichter Regen","Starker Regen","Nebel","Windig"];
+  weather=options[Math.floor(Math.random()*options.length)];
+  temperature=Math.round(12+Math.random()*14);
+  wind=Math.round(2+Math.random()*25);
+  updateWorld();
+}
+
+function tickWorld() {
+  gameTime=(gameTime+0.025)%24;
+  weatherTimer++;
+  if(weatherTimer>120) {
+    weatherTimer=0;
+    if(Math.random()<.35) changeWeather();
+  }
+  updateWorld();
+}
+
+/* =========================================================
+   Seiten und Navigation
+========================================================= */
+
+function showPage(name) {
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===name));
+  const page=$("page-"+name);
+  if(page) page.classList.add("active");
+  renderPage(name);
+}
+
+function renderPage(name) {
+  if(name==="locations") renderLocations();
+  if(name==="equipment") renderEquipment();
+  if(name==="shop") renderShop();
+  if(name==="missions") renderMissions();
+  if(name==="logbook") renderLogbook();
+  if(name==="records") renderRecords();
+  if(name==="encyclopedia") renderEncyclopedia();
+  if(name==="tournaments") renderTournaments();
+}
+
+/* =========================================================
+   Angelgebiete
+========================================================= */
+
+function renderLocations() {
+  $("locationCards").innerHTML=locations.map(loc=>{
+    const unlocked=state.level>=loc.level||state.unlocked.includes(loc.id);
+    return `<div class="card">
+      <span class="tag">${loc.kind}</span>
+      <h3>${loc.name}</h3>
+      <p class="muted">${loc.description}</p>
+      <p class="muted">Tiefe: ${loc.depth} m · ${loc.bottom}</p>
+      <p class="muted">Fische: ${loc.fish.join(", ")}</p>
+      <button class="${state.location===loc.id?"primary":""}" 
+        ${unlocked?"":"disabled"}
+        onclick="selectLocation('${loc.id}')">
+        ${state.location===loc.id?"Aktueller Platz":unlocked?"Angelplatz wählen":`Ab Level ${loc.level}`}
+      </button>
+    </div>`;
+  }).join("");
+}
+
+function selectLocation(id) {
+  if(fishing.phase!=="idle") {
+    notify("Hole zuerst deine Angel ein.");
+    return;
+  }
+  const loc=locations.find(x=>x.id===id);
+  if(!loc) return;
+  if(state.level<loc.level&&!state.unlocked.includes(id)) {
+    notify("Dein Level ist noch zu niedrig.");
+    return;
+  }
+  state.location=id;
+  if(!state.unlocked.includes(id)) state.unlocked.push(id);
+  $("locationTitle").textContent=loc.name;
+  $("locationDescription").textContent=loc.description;
+  updateWorld();
+  saveGame();
+  notify(`Du angelst jetzt am ${loc.name}.`);
+  showPage("fishing");
+}
+
+/* =========================================================
+   Ausrüstung und Shop
+========================================================= */
+
+function populateEquipmentSelectors() {
+  $("rodSelect").innerHTML=state.ownedRods.map(name=>
+    `<option ${name===state.currentRod?"selected":""}>${name}</option>`).join("");
+  $("baitSelect").innerHTML=Object.keys(state.baits).filter(k=>state.baits[k]>0).map(name=>
+    `<option ${name===state.currentBait?"selected":""}>${name}</option>`).join("");
+  if(!state.baits[state.currentBait]) {
+    state.currentBait=Object.keys(state.baits).find(k=>state.baits[k]>0)||"Wurm";
+  }
+}
+
+function renderEquipment() {
+  $("equippedRod").innerHTML=`<strong>${state.currentRod}</strong><p class="muted">Kraft: ${currentRod().power}</p>`;
+  $("equippedBait").innerHTML=`<strong>${state.currentBait}</strong><p class="muted">Vorrat: ${state.baits[state.currentBait]||0}</p>`;
+  $("accessoryInfo").textContent=state.gear.join(", ");
+  populateEquipmentSelectors();
+}
+
+function renderShop() {
+  $("shopList").innerHTML=shopItems.map(item=>{
+    const owned=item.kind==="rod"&&state.ownedRods.includes(item.name);
+    const gearOwned=item.kind==="gear"&&state.gear.includes(item.name);
+    const unavailable=item.kind==="rod"&&state.level<(rods.find(r=>r.name===item.name)?.level||1);
+    return `<div class="shop-item">
+      <div><strong>${item.name}</strong><br><small class="muted">${item.kind==="rod"?"Angelrute":"Ausrüstung"}</small></div>
+      <div class="row"><strong>${item.price} €</strong>
+      <button class="small" ${owned||gearOwned||unavailable?"disabled":""}
+      onclick="buyItem('${item.name}')">${owned||gearOwned?"Besitzt du":unavailable?"Level zu niedrig":"Kaufen"}</button></div>
+    </div>`;
+  }).join("")+`<hr><h3>Köder kaufen</h3>`+
+  baits.map(b=>`<div class="shop-item">
+    <div><strong>${b.name}</strong><br><small class="muted">Vorrat: ${state.baits[b.name]||0}</small></div>
+    <div class="row"><strong>${b.price} €</strong>
+    <button class="small" onclick="buyBait('${b.name}')">+10 kaufen</button></div>
+  </div>`).join("");
+}
+
+function buyItem(name) {
+  const item=shopItems.find(x=>x.name===name);
+  if(!item||state.money<item.price) return notify("Dafür hast du nicht genug Geld.");
+  if(item.kind==="rod") {
+    const rod=rods.find(x=>x.name===name);
+    if(!rod||state.level<rod.level) return notify("Dein Level reicht noch nicht.");
+    if(state.ownedRods.includes(name)) return;
+    state.ownedRods.push(name);
+  } else {
+    if(state.gear.includes(name)) return;
+    state.gear.push(name);
+  }
+  state.money-=item.price;
+  saveGame();
+  updateHeader();
+  renderShop();
+  notify(`${name} gekauft!`);
+}
+
+function buyBait(name) {
+  const bait=baits.find(x=>x.name===name);
+  if(!bait||state.money<bait.price*10) return notify("Nicht genug Geld.");
+  state.money-=bait.price*10;
+  state.baits[name]=(state.baits[name]||0)+10;
+  saveGame();
+  updateHeader();
+  populateEquipmentSelectors();
+  renderShop();
+  notify(`10 × ${name} gekauft.`);
+}
+
+/* =========================================================
+   Auswerfen und Biss-System
+========================================================= */
+
+function castLine() {
+  if(fishing.phase!=="idle") return notify("Deine Angel ist bereits im Wasser.");
+  const bait=state.currentBait;
+  if(!state.baits[bait]||state.baits[bait]<=0) return notify("Du hast diesen Köder nicht mehr.");
+  if(!state.ownedRods.includes(state.currentRod)) return notify("Diese Angel ist nicht verfügbar.");
+
+  state.baits[bait]--;
+  fishing.phase="waiting";
+  fishing.distance=Number($("distanceInput").value);
+  $("float").style.display="block";
+  $("castLine").style.display="block";
+  $("castButton").disabled=true;
+  $("reelButton").disabled=false;
+  $("fishingStatus").textContent="Der Köder liegt im Wasser. Warte auf einen Biss …";
+  saveGame();
+  populateEquipmentSelectors();
+  playTone(180,.08);
+  notify("Ausgeworfen! Jetzt aufmerksam bleiben.");
+
+  const wait=7000+Math.random()*15000;
+  fishing.biteTimeout=setTimeout(triggerBite,wait);
+}
+
+function getEligibleFish() {
+  const loc=currentLocation();
+  const bait=state.currentBait;
+  const depth=$("depthSelect").value;
+  const phase=getDayPhase();
+  let candidates=fishData.filter(f=>loc.fish.includes(f.name));
+  candidates=candidates.filter(f=>f.depth.includes(depth));
+  if(candidates.length===0) candidates=fishData.filter(f=>loc.fish.includes(f.name));
+  const weighted=[];
+  candidates.forEach(f=>{
+    let score=1/(f.rarity||1);
+    if(f.baits.includes(bait)) score*=3.5;
+    if(f.times.includes(phase)) score*=1.7;
+    if(weather.includes("Regen")&&f.type==="Friedfisch") score*=1.15;
+    for(let i=0;i<Math.max(1,Math.round(score*5));i++) weighted.push(f);
+  });
+  return weighted[Math.floor(Math.random()*weighted.length)]||candidates[0];
+}
+
+function triggerBite() {
+  if(fishing.phase!=="waiting") return;
+  fishing.fish=getEligibleFish();
+  fishing.phase="bite";
+  $("biteAlert").style.display="block";
+  $("fishingStatus").textContent="Ein Fisch hat angebissen! Jetzt anschlagen!";
+  playTone(650,.18);
+  fishing.biteTimeout=setTimeout(()=>{
+    if(fishing.phase==="bite") {
+      notify("Der Fisch hat den Köder wieder losgelassen.");
+      resetFishing();
+    }
+  },3500);
+}
+
+function strike() {
+  if(fishing.phase!=="bite") return;
+  clearTimeout(fishing.biteTimeout);
+  $("biteAlert").style.display="none";
+  fishing.phase="fight";
+  const f=fishing.fish;
+  const weight=f.weight[0]+Math.random()*(f.weight[1]-f.weight[0]);
+  const length=f.length[0]+Math.random()*(f.length[1]-f.length[0]);
+  fishing.fish={...f,caughtWeight:weight,caughtLength:length};
+  fishing.stamina=100;
+  fishing.tension=25;
+  fishing.distance=12+Math.random()*35;
+  fishing.lastTick=Date.now();
+  $("reelInButton").disabled=false;
+  $("releaseButton").disabled=false;
+  $("fishingStatus").textContent=`${f.name} am Haken! Halte die Spannung im grünen Bereich.`;
+  notify(`${f.name} hat angebissen! Der Drill beginnt.`);
+  playTone(420,.15);
+  startFightLoop();
+}
+
+function startFightLoop() {
+  clearInterval(fishing.timer);
+  fishing.timer=setInterval(()=>{
+    if(fishing.phase!=="fight") return;
+    const f=fishing.fish;
+    const rodPower=currentRod().power;
+    const brake=Number($("brakeInput").value);
+    const force=(f.caughtWeight*1.3)+Math.random()*15;
+    const pressure=brake*.55+rodPower*.9;
+    const delta=force-pressure;
+    fishing.tension=Math.max(0,Math.min(100,fishing.tension+delta*.16));
+    fishing.stamina=Math.max(0,fishing.stamina-(Math.max(0,pressure-force*.55)*.08));
+    if(Math.random()<.25) fishing.distance=Math.min(90,fishing.distance+Math.random()*2.5);
+    updateFightUI();
+
+    if(fishing.tension>95) {
+      notify("Die Schnur ist gerissen! Der Fisch entkommt.");
+      resetFishing();
+    } else if(fishing.distance>85) {
+      notify("Der Fisch ist entkommen.");
+      resetFishing();
+    } else if(fishing.stamina<=0) {
+      fishing.distance=Math.max(0,fishing.distance-1);
+      $("fishingStatus").textContent="Der Fisch ist ermüdet. Du kannst ihn landen.";
+    }
+  },500);
+}
+
+function updateFightUI() {
+  $("tensionBar").style.width=fishing.tension+"%";
+  $("staminaBar").style.width=fishing.stamina+"%";
+  $("brakeValue").textContent=$("brakeInput").value+" %";
+  $("fishingStatus").textContent=
+    `Fisch: ${fishing.fish.name} · Entfernung: ${Math.round(fishing.distance)} m · Spannung: ${Math.round(fishing.tension)} %`;
+}
+
+function reelIn() {
+  if(fishing.phase!=="fight") return;
+  const brake=Number($("brakeInput").value);
+  const rodPower=currentRod().power;
+  fishing.tension+=Math.max(1,brake*.035);
+  fishing.distance-=Math.max(.7,rodPower*.12);
+  fishing.stamina=Math.max(0,fishing.stamina-1.8);
+  if(fishing.tension>95) {
+    notify("Zu viel Druck! Die Schnur ist gerissen.");
+    resetFishing();
+    return;
+  }
+  updateFightUI();
+  if(fishing.distance<=2&&fishing.stamina<=15) landFish();
+}
+
+function landFish() {
+  if(fishing.phase!=="fight") return;
+  const fish=fishing.fish;
+  if(!fish) return;
+  clearInterval(fishing.timer);
+  const entry={
+    name:fish.name,
+    weight:Number(fish.caughtWeight.toFixed(2)),
+    length:Number(fish.caughtLength.toFixed(1)),
+    location:currentLocation().name,
+    bait:state.currentBait,
+    rod:state.currentRod,
+    date:new Date().toLocaleString("de-DE"),
+    released:false
+  };
+  state.catches.unshift(entry);
+  state.totalCaught++;
+  state.totalWeight+=entry.weight;
+  const value=Math.max(2,Math.round(entry.weight*4+entry.length*.12));
+  state.money+=value;
+  addXP(Math.round(15+entry.weight*2));
+  updateRecords(entry);
+  updateMissionProgress(entry);
+  saveGame();
+  notify(`${entry.name} gelandet! ${entry.weight} kg · Verkauf: ${value} €`);
+  showCatchModal(entry,value);
+  resetFishing();
+  updateHeader();
+}
+
+function showCatchModal(fish,value) {
+  showModal("Fang erfolgreich!",`
+    <div class="card">
+      <div class="tag">NEUER FANG</div>
+      <h2>🐟 ${fish.name}</h2>
+      <p>Gewicht: <strong>${fish.weight} kg</strong></p>
+      <p>Länge: <strong>${fish.length} cm</strong></p>
+      <p>Angelgebiet: ${fish.location}</p>
+      <p>Köder: ${fish.bait}</p>
+      <p>Verkaufserlös: <strong>${value} €</strong></p>
+    </div>
+    <p>Du kannst den Fang behalten oder ihn im Fangbuch dokumentieren und zurücksetzen.</p>
+    <button class="primary" onclick="keepCatch()">Behalten und verkaufen</button>
+    <button onclick="releaseCatch()">Catch & Release (+XP)</button>
+  `);
+  fishing.pendingCatch=fish;
+}
+
+function keepCatch() {
+  closeModal();
+  saveGame();
+  resetFishing();
+  notify("Fang wurde verkauft und gespeichert.");
+  renderLogbook();
+}
+
+function releaseCatch() {
+  const fish=fishing.pendingCatch;
+  if(!fish) return closeModal();
+  const found=state.catches.find(x=>x.date===fish.date);
+  if(found) found.released=true;
+  state.money=Math.max(0,state.money-Math.max(2,Math.round(fish.weight*4+fish.length*.12)));
+  state.released++;
+  addXP(20);
+  fishing.pendingCatch=null;
+  closeModal();
+  saveGame();
+  resetFishing();
+  notify("Fisch schonend zurückgesetzt. +20 XP");
+  renderLogbook();
+}
+
+function resetFishing() {
+  clearInterval(fishing.timer);
+  clearTimeout(fishing.biteTimeout);
+  fishing.phase="idle";
+  fishing.fish=null;
+  fishing.tension=0;
+  fishing.stamina=0;
+  fishing.distance=0;
+  $("float").style.display="none";
+  $("castLine").style.display="none";
+  $("biteAlert").style.display="none";
+  $("castButton").disabled=false;
+  $("reelButton").disabled=true;
+  $("reelInButton").disabled=true;
+  $("releaseButton").disabled=true;
+  $("tensionBar").style.width="0%";
+  $("staminaBar").style.width="0%";
+  $("fishingStatus").textContent="Wähle deine Ausrüstung und wirf aus.";
+}
+
+function updateRecords(fish) {
+  const heaviest=state.records.heaviest;
+  if(!heaviest||fish.weight>heaviest.weight) state.records.heaviest=fish;
+  if(fish.name.toLowerCase().includes("karpfen")) {
+    if(!state.records.carp||fish.weight>state.records.carp.weight) state.records.carp=fish;
+  }
+  if(fish.name==="Hecht") {
+    if(!state.records.pike||fish.length>state.records.pike.length) state.records.pike=fish;
+  }
+  if(!state.records.longest||fish.length>state.records.longest.length) state.records.longest=fish;
+}
+
+/* =========================================================
+   Audio: einfache synthetische Soundeffekte
+========================================================= */
+
+function playTone(frequency=440,duration=.1) {
+  if(Number(state.sound)===0) return;
+  try {
+    soundContext=soundContext||new (window.AudioContext||window.webkitAudioContext)();
+    const oscillator=soundContext.createOscillator();
+    const gain=soundContext.createGain();
+    oscillator.frequency.value=frequency;
+    gain.gain.value=(state.sound/100)*.045;
+    oscillator.connect(gain);
+    gain.connect(soundContext.destination);
+    oscillator.start();
+    gain.gain.exponentialRampToValueAtTime(.001,soundContext.currentTime+duration);
+    oscillator.stop(soundContext.currentTime+duration);
+  } catch(e) {
+    console.warn("Audio nicht verfügbar",e);
+  }
+}
+
+/* =========================================================
+   Buttons und Steuerung
+========================================================= */
+
+document.querySelectorAll("nav button").forEach(button=>{
+  button.addEventListener("click",()=>showPage(button.dataset.page));
+});
+
+$("castButton").addEventListener("click",castLine);
+$("reelButton").addEventListener("click",()=>{
+  if(fishing.phase==="bite") strike();
+  else if(fishing.phase==="waiting") {
+    clearTimeout(fishing.biteTimeout);
+    resetFishing();
+    notify("Du hast die Angel eingeholt.");
+  }
+});
+$("reelInButton").addEventListener("click",reelIn);
+$("releaseButton").addEventListener("click",landFish);
+$("brakeInput").addEventListener("input",()=>{
+  $("brakeValue").textContent=$("brakeInput").value+" %";
+});
+$("distanceInput").addEventListener("input",()=>{
+  $("distanceValue").textContent=$("distanceInput").value+" m";
+});
+$("rodSelect").addEventListener("change",e=>{
+  state.currentRod=e.target.value;
+  saveGame();
+  renderEquipment();
+});
+$("baitSelect").addEventListener("change",e=>{
+  state.currentBait=e.target.value;
+  saveGame();
+  renderEquipment();
+});
+$("closeModal").addEventListener("click",closeModal);
+$("modalBackdrop").addEventListener("click",e=>{
+  if(e.target===$("modalBackdrop")) closeModal();
+});
+$("saveButton").addEventListener("click",()=>{
+  saveGame();
+  notify("Spielstand gespeichert.");
+});
+$("resetButton").addEventListener("click",()=>{
+  if(confirm("Wirklich den gesamten Spielstand löschen?")) {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
+});
+$("soundVolume").addEventListener("input",e=>{
+  state.sound=Number(e.target.value);
+  saveGame();
+});
+$("scannerButton").addEventListener("click",()=>{
+  const loc=currentLocation();
+  const fish=loc.fish.filter(()=>Math.random()>.35);
+  showModal("Echolot-Analyse",`
+    <p><strong>Gewässer:</strong> ${loc.name}</p>
+    <p><strong>Tiefe:</strong> ${loc.depth} m</p>
+    <p><strong>Boden:</strong> ${loc.bottom}</p>
+    <p><strong>Erkannte Fischarten:</strong> ${fish.join(", ")||"Keine eindeutigen Signale"}</p>
+    <p class="muted">Die Anzeige ist eine simulierte Echolotmessung.</p>
+  `);
+});
+$("underwaterButton").addEventListener("click",()=>{
+  const fish=currentLocation().fish;
+  showModal("Unterwasserkamera",`
+    <div style="padding:25px;background:linear-gradient(#367a7b,#0a292e);border-radius:12px;text-align:center">
+      <div style="font-size:42px">〰️ 🐟 〰️</div>
+      <h3>Unterwasseransicht</h3>
+      <p>Wassertiefe: ${currentLocation().depth} m</p>
+      <p>Im Gebiet vorkommende Arten:</p>
+      <strong>${fish.join(" · ")}</strong>
+    </div>
+  `);
+});
+
+/* =========================================================
+   Initialisierung
+========================================================= */
+
+function initGame() {
+  populateEquipmentSelectors();
+  updateHeader();
+  updateWorld();
+  $("locationTitle").textContent=currentLocation().name;
+  $("locationDescription").textContent=currentLocation().description;
+  $("soundVolume").value=state.sound;
+  renderPage("locations");
+  renderPage("equipment");
+  renderPage("shop");
+  renderPage("missions");
+  renderPage("logbook");
+  renderPage("records");
+  renderPage("encyclopedia");
+  renderPage("tournaments");
+  setInterval(tickWorld,1000);
+  setInterval(saveGame,15000);
+}
+
+initGame();
+</script>
+<script>
+/* =========================================================
+   TÄGLICHE UND WÖCHENTLICHE MISSIONEN
+========================================================= */
+
+const dailyTemplates = [
+  {id:"catch3",name:"Kleiner Angeltag",description:"Fange 3 Fische.",target:3,reward:80,xp:35,progress:0},
+  {id:"carp",name:"Karpfenjäger",description:"Fange einen Karpfen.",target:1,reward:120,xp:50,progress:0},
+  {id:"bigfish",name:"Schöner Fang",description:"Fange einen Fisch über 2 kg.",target:1,reward:100,xp:45,progress:0},
+  {id:"species",name:"Artenvielfalt",description:"Fange 2 unterschiedliche Fischarten.",target:2,reward:110,xp:45,progress:0},
+  {id:"predator",name:"Räuber des Wassers",description:"Fange einen Raubfisch.",target:1,reward:90,xp:40,progress:0}
+];
+
+const weeklyTemplates = [
+  {id:"week10",name:"Fleißiger Angler",description:"Fange 10 Fische.",target:10,reward:400,xp:150,progress:0},
+  {id:"weekweight",name:"Schwergewicht",description:"Erreiche 30 kg Gesamtfanggewicht.",target:30,reward:500,xp:180,progress:0},
+  {id:"weekspecies",name:"Fischkenner",description:"Fange 5 verschiedene Fischarten.",target:5,reward:450,xp:160,progress:0}
+];
+
+function createMissions() {
+  state.missions=dailyTemplates.slice(0,3).map(m=>({...m,progress:0,completed:false,claimed:false}));
+  state.weekly=weeklyTemplates.map(m=>({...m,progress:0,completed:false,claimed:false}));
+  state.lastDaily=new Date().toDateString();
+  state.lastWeekly=getWeekKey();
+  saveGame();
+}
+
+function checkMissionReset() {
+  const today=new Date().toDateString();
+  if(state.lastDaily!==today) createMissions();
+
+  if(state.lastWeekly!==getWeekKey()) {
+    state.weekly=weeklyTemplates.map(m=>({...m,progress:0,completed:false,claimed:false}));
+    state.lastWeekly=getWeekKey();
+    saveGame();
+  }
+
+  if(!state.missions||state.missions.length===0) createMissions();
+  if(!state.weekly||state.weekly.length===0) {
+    state.weekly=weeklyTemplates.map(m=>({...m,progress:0,completed:false,claimed:false}));
+  }
+}
+
+function updateMissionProgress(fish) {
+  checkMissionReset();
+
+  function update(list) {
+    list.forEach(m=>{
+      if(m.completed) return;
+
+      if(m.id==="catch3"||m.id==="week10") m.progress++;
+      if(m.id==="carp"&&fish.name.toLowerCase().includes("karpfen")) m.progress++;
+      if(m.id==="bigfish"&&fish.weight>=2) m.progress++;
+      if(m.id==="species") {
+        const distinct=new Set(state.catches.map(c=>c.name));
+        m.progress=distinct.size;
+      }
+      if(m.id==="predator"&&fish.type==="Raubfisch") m.progress++;
+      if(m.id==="weekweight") m.progress=Number(state.totalWeight.toFixed(1));
+      if(m.id==="weekspecies") {
+        m.progress=new Set(state.catches.map(c=>c.name)).size;
+      }
+
+      if(m.progress>=m.target) {
+        m.progress=m.target;
+        m.completed=true;
+        notify(`Mission abgeschlossen: ${m.name}`);
+      }
+    });
+  }
+
+  update(state.missions);
+  update(state.weekly);
+  saveGame();
+}
+
+function claimMission(type,index) {
+  const list=type==="daily"?state.missions:state.weekly;
+  const mission=list[index];
+  if(!mission||!mission.completed||mission.claimed) return;
+
+  mission.claimed=true;
+  state.money+=mission.reward;
+  addXP(mission.xp);
+  saveGame();
+  updateHeader();
+  renderMissions();
+  notify(`Belohnung erhalten: ${mission.reward} € und ${mission.xp} XP`);
+}
+
+function renderMissionList(list,type) {
+  return list.map((m,index)=>`
+    <div class="mission-item">
+      <div style="flex:1">
+        <strong>${m.name}</strong>
+        <p class="muted">${m.description}</p>
+        <div class="progress"><div style="width:${Math.min(100,m.progress/m.target*100)}%"></div></div>
+        <small class="muted">${m.progress}/${m.target} · Belohnung ${m.reward} € · ${m.xp} XP</small>
+      </div>
+      <div>
+        ${m.claimed
+          ? '<span class="tag">Erledigt</span>'
+          : m.completed
+            ? `<button class="small gold" onclick="claimMission('${type}',${index})">Abholen</button>`
+            : '<span class="tag">Aktiv</span>'}
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderMissions() {
+  checkMissionReset();
+  $("dailyMissions").innerHTML=renderMissionList(state.missions,"daily");
+  $("weeklyMissions").innerHTML=renderMissionList(state.weekly,"weekly");
+}
+
+/* =========================================================
+   FANGBUCH
+========================================================= */
+
+function renderLogbook() {
+  const catches=state.catches||[];
+  $("totalCatches").textContent=state.totalCaught;
+  $("totalWeight").textContent=state.totalWeight.toFixed(1)+" kg";
+  $("speciesCount").textContent=new Set(catches.map(f=>f.name)).size;
+
+  if(catches.length===0) {
+    $("catchList").innerHTML='<div class="empty">Noch keine Fische gefangen. Wirf deine Angel aus!</div>';
+    return;
+  }
+
+  $("catchList").innerHTML=catches.slice(0,60).map(f=>`
+    <div class="catch-item">
+      <div>
+        <strong>🐟 ${f.name}</strong><br>
+        <span class="muted">${f.location} · ${f.date}</span><br>
+        <small class="muted">${f.bait} · ${f.rod}</small>
+      </div>
+      <div style="text-align:right">
+        <strong>${f.weight} kg</strong><br>
+        <span class="muted">${f.length} cm</span><br>
+        ${f.released?'<span class="tag">Zurückgesetzt</span>':''}
+      </div>
+    </div>
+  `).join("");
+}
+
+/* =========================================================
+   REKORDE
+========================================================= */
+
+function renderRecords() {
+  const records=[
+    {title:"Schwerster Fisch",fish:state.records.heaviest,field:"weight",unit:"kg"},
+    {title:"Längster Fisch",fish:state.records.longest,field:"length",unit:"cm"},
+    {title:"Größter Karpfen",fish:state.records.carp,field:"weight",unit:"kg"},
+    {title:"Längster Hecht",fish:state.records.pike,field:"length",unit:"cm"}
+  ];
+
+  $("recordCards").innerHTML=records.map(r=>`
+    <div class="card">
+      <span class="tag">PERSÖNLICHER REKORD</span>
+      <h3>${r.title}</h3>
+      ${r.fish
+        ? `<div class="stat gold-text">${r.fish[r.field]} ${r.unit}</div>
+           <strong>${r.fish.name}</strong>
+           <p class="muted">${r.fish.location||"Unbekanntes Gebiet"}</p>`
+        : '<div class="empty">Noch kein Rekord vorhanden.</div>'}
+    </div>
+  `).join("");
+}
+
+/* =========================================================
+   FISCHLEXIKON
+========================================================= */
+
+function renderEncyclopedia() {
+  $("fishCards").innerHTML=fishData.map(f=>{
+    const discovered=state.catches.some(c=>c.name===f.name);
+    return `
+      <div class="card">
+        <div class="row between">
+          <span class="tag">${f.type}</span>
+          <span class="muted">${discovered?"Entdeckt":"Noch nicht gefangen"}</span>
+        </div>
+        <h3>🐟 ${f.name}</h3>
+        <p class="muted">${f.habitat}</p>
+        <hr>
+        <p><strong>Größe:</strong> ${f.length[0]}–${f.length[1]} cm</p>
+        <p><strong>Gewicht:</strong> ${f.weight[0]}–${f.weight[1]} kg</p>
+        <p><strong>Nahrung:</strong> ${f.food}</p>
+        <p><strong>Geeignete Köder:</strong> ${f.baits.join(", ")}</p>
+        <p><strong>Aktiv:</strong> ${f.times.join(", ")}</p>
+        <p><strong>Seltenheit:</strong> ${"★".repeat(Math.min(5,f.rarity))}</p>
+      </div>
+    `;
+  }).join("");
+}
+
+/* =========================================================
+   TURNIERE
+========================================================= */
+
+const tournamentDefinitions=[
+  {
+    id:"heavy",
+    name:"Schwerster Fang",
+    description:"Fange während des Turniers den schwersten Fisch.",
+    requirement:"Gewicht entscheidet",
+    reward:350
+  },
+  {
+    id:"carpCup",
+    name:"Karpfen-Cup",
+    description:"Der schwerste Karpfen gewinnt.",
+    requirement:"Nur Karpfen zählen",
+    reward:500
+  },
+  {
+    id:"speciesCup",
+    name:"Arten-Challenge",
+    description:"Fange möglichst viele verschiedene Fischarten.",
+    requirement:"Artenvielfalt entscheidet",
+    reward:400
+  }
+];
+
+function renderTournaments() {
+  $("tournamentCards").innerHTML=tournamentDefinitions.map(t=>`
+    <div class="card">
+      <span class="tag">ANGELWETTBEWERB</span>
+      <h3>${t.name}</h3>
+      <p class="muted">${t.description}</p>
+      <p><strong>Regel:</strong> ${t.requirement}</p>
+      <p><strong>Preisgeld:</strong> ${t.reward} €</p>
+      <button class="primary" onclick="enterTournament('${t.id}')">Ergebnis prüfen</button>
+    </div>
+  `).join("");
+}
+
+function enterTournament(id) {
+  const tournament=tournamentDefinitions.find(t=>t.id===id);
+  if(!tournament) return;
+
+  let score=0;
+  let description="Noch kein gültiger Fang.";
+
+  if(id==="heavy"&&state.catches.length) {
+    const best=state.catches.reduce((a,b)=>a.weight>b.weight?a:b);
+    score=best.weight;
+    description=`Dein bester Fang: ${best.name} (${best.weight} kg).`;
+  }
+
+  if(id==="carpCup") {
+    const carps=state.catches.filter(f=>f.name.toLowerCase().includes("karpfen"));
+    if(carps.length) {
+      const best=carps.reduce((a,b)=>a.weight>b.weight?a:b);
+      score=best.weight;
+      description=`Dein bester Karpfen: ${best.weight} kg.`;
+    }
+  }
+
+  if(id==="speciesCup") {
+    score=new Set(state.catches.map(f=>f.name)).size;
+    description=`Du hast ${score} unterschiedliche Fischarten gefangen.`;
+  }
+
+  showModal(tournament.name,`
+    <p>${description}</p>
+    <p>Dein aktueller Wert: <strong>${score}</strong></p>
+    <p class="muted">Das Turnier ist hier als persönlicher Ergebnisvergleich umgesetzt. Es gibt keine Online-Rangliste.</p>
+  `);
+}
+
+/* =========================================================
+   EVENTS UND BESONDERE FÄNGE
+========================================================= */
+
+const events=[
+  "Karpfen-Aktivität",
+  "Besonders aktive Fischschwärme",
+  "Forellen-Saison",
+  "Nachtangel-Event",
+  "Seltene Fangmöglichkeiten"
+];
+
+function rotateEvent() {
+  const event=events[Math.floor(Math.random()*events.length)];
+  $("eventTag").textContent=event;
+}
+
+setInterval(rotateEvent,90000);
+
+/* =========================================================
+   LEVEL UND RANG
+========================================================= */
+
+function getAnglerRank() {
+  if(state.level>=30) return "Angellegende";
+  if(state.level>=20) return "Meisterangler";
+  if(state.level>=15) return "Profiangler";
+  if(state.level>=10) return "Fortgeschrittener Angler";
+  if(state.level>=5) return "Hobbyangler";
+  return "Anfänger";
+}
+
+function updateRankDisplay() {
+  const rank=getAnglerRank();
+  $("eventTag").title="Dein Rang: "+rank;
+}
+
+/* =========================================================
+   SPEICHERN UND WIEDERHERSTELLEN
+========================================================= */
+
+function safeSave() {
+  try {
+    saveGame();
+  } catch(error) {
+    console.error("Speichern fehlgeschlagen:",error);
+    notify("Speichern fehlgeschlagen. Prüfe den Browser-Speicher.");
+  }
+}
+
+window.addEventListener("beforeunload",safeSave);
+
+checkMissionReset();
+updateRankDisplay();
+renderMissions();
+renderLogbook();
+renderRecords();
+renderEncyclopedia();
+renderTournaments();
+</script>
+
+</body>
+</html>

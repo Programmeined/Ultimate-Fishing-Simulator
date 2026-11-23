@@ -1,0 +1,121 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: default deny everything
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedEmail() && request.auth.token.email == 'eined8006@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isVerifiedEmail() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidServerEvent(data) {
+      return data.keys().hasAll([
+        'title',
+        'description',
+        'bonusType',
+        'locationId',
+        'active',
+        'startsAt',
+        'endsAt',
+        'createdByUid',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'title',
+        'description',
+        'bonusType',
+        'locationId',
+        'active',
+        'startsAt',
+        'endsAt',
+        'createdByUid',
+        'createdByName',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.title is string && data.title.size() >= 3 && data.title.size() <= 60 &&
+      data.description is string && data.description.size() <= 240 &&
+      data.bonusType in ['xp_boost', 'money_boost', 'activity_boost', 'rare_fish', 'luck_boost', 'all_boost'] &&
+      data.locationId is string && data.locationId.size() >= 2 && data.locationId.size() <= 32 && data.locationId.matches('^[a-z0-9_\\-]+$') &&
+      data.active is bool &&
+      data.startsAt is string && data.startsAt.size() >= 10 && data.startsAt.size() <= 40 &&
+      data.endsAt is string && data.endsAt.size() >= 10 && data.endsAt.size() <= 40 &&
+      data.createdByUid is string && data.createdByUid.size() >= 1 && data.createdByUid.size() <= 128 &&
+      (!('createdByName' in data) || (data.createdByName is string && data.createdByName.size() <= 60)) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // Connectivity health-check doc
+    match /test/connection {
+      allow get: if true;
+      allow list, create, update, delete: if false;
+    }
+
+    // Admin roster (no client-side self-escalation)
+    match /admins/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isBootstrappedAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    // Public active server-wide events; admin-only creation, editing & listing of inactive events
+    match /server_events/{eventId} {
+      allow get: if isValidId(eventId) && (existing().active == true || isAdmin());
+      allow list: if existing().active == true || isBootstrappedAdmin();
+      allow create: if isAdmin() &&
+        isValidId(eventId) &&
+        isValidServerEvent(incoming()) &&
+        incoming().createdByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isAdmin() &&
+        isValidId(eventId) &&
+        isValidServerEvent(incoming()) &&
+        incoming().createdByUid == existing().createdByUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title',
+          'description',
+          'bonusType',
+          'locationId',
+          'active',
+          'startsAt',
+          'endsAt',
+          'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(eventId);
+    }
+  }
+}

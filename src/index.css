@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+:root {
+  --bg-canvas: #0d1718;
+  --bg-rail: #101c1d;
+  --bg-panel: #142425;
+  --bg-panel-elevated: #192d2e;
+  --border-hairline: rgba(208, 232, 220, 0.14);
+  --border-strong: rgba(208, 232, 220, 0.28);
+  --text-primary: #edf3ed;
+  --text-muted: #9eb2a8;
+  --accent-sage: #8fb886;
+  --accent-brass: #e5bd70;
+  --danger-coral: #e17e70;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: "Fraunces", Georgia, serif;
+}
+
+.font-mono-num {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom range slider styling aligned with lakeside brass & pine theme */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #0a1414;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-hairline);
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-brass);
+  border: 2px solid #0d1718;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-brass);
+  border: 2px solid #0d1718;
+  cursor: pointer;
+}
+
+.panel-surface {
+  background: linear-gradient(180deg, rgba(24, 42, 43, 0.94) 0%, rgba(18, 32, 33, 0.98) 100%);
+  box-shadow: inset 0 1px 0 rgba(235, 248, 240, 0.05), 0 8px 24px -12px rgba(0, 0, 0, 0.55);
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgba(229, 189, 112, 0.7);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a1314;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #233b3b;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #315150;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
